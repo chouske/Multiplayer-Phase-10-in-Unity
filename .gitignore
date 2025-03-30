@@ -1,0 +1,39 @@
+## Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Tt]argets/
+.obj/
+.venv/
+.vscode/
+.idea/
+.vs/
+# Windows image file caches
+Thumbs.db
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+# Windows Installer files
+*.cab
+# macOS
+.DS_Store
+# Linux
+.Trash-*
+
+# User-specific files
+*.user
+*.userprefs
+*.csproj
+*.sln
+*.suo
+*.pidb
+*.booproj
+.idea/
+.vscode/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp

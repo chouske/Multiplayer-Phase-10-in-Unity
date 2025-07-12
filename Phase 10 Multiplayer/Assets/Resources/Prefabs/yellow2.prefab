@@ -341,3 +341,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 2
   color: yellow
+  owner: 0

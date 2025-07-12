@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 public class CardManager : MonoBehaviour
@@ -18,15 +19,18 @@ public class CardManager : MonoBehaviour
     public GameObject card11;
     public GameObject card12;*/
     #endregion
-    string[] colors = {"red", "blue", "green", "yellow"};
-    int[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    //string[] colors = {"red", "blue", "green", "yellow"};
+    //int[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+     string[] colors = {"blue"};
+    int[] numbers = {1};
     public TMP_Text turntext;
     int max_players = 6;
     int actual_players = 4;
     int max_cards = 11;
     int round = 0;
     int playerturn = 0;
-    bool hasdrew = false;
+    bool hasdiscard = false;
+    bool hasdraw = false;
     List<GameObject> allpossiblecards;
     List<GameObject>[] playerhands;
     void Start()
@@ -50,11 +54,15 @@ public class CardManager : MonoBehaviour
             displayplayercards(0);
     }
     
+    
     void giveplayersstartingcards(){
         Vector3 cardpos = new Vector3(-8.15f, -5.25f, 0f);
         for(int y = 0; y < actual_players; y++){
             for(int x = 0; x < 10; x++){
+                    int index = x; //Needed because of weirdness with lambdas
                     GameObject newboardcard = Instantiate(generaterandomcard());
+                    Debug.Log("y: " + y + " x: " + x);
+                    newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(index));
                     newboardcard.transform.position = cardpos;
                     cardpos.x = cardpos.x + 1.5f;
                     playerhands[y].Add(newboardcard);
@@ -83,6 +91,12 @@ public class CardManager : MonoBehaviour
         round++;
     }
     void endturn(){
+        if(!hasdraw){
+            return;
+        }
+        if(!hasdiscard){
+            return;
+        }
         if(playerturn == (actual_players-1)){   
             playerturn = 0;
         }
@@ -90,21 +104,37 @@ public class CardManager : MonoBehaviour
             playerturn++;
         }
         turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
-        hasdrew = false;
+        hasdiscard = false;
+        hasdraw = false;
         hideallplayercards();
         displayplayercards(playerturn);
     }
-    void drawcreatecard(){
-        if(!hasdrew){
+    void drawcreatecard(){//Determines a random card, creates an object of it, and makes sure it has appeared
+        if(!hasdraw){
             //playerhands[playerturn].Add(Instantiate(allpossiblecards[Random.Range(0, allpossiblecards.Count)]));
             playerhands[playerturn].Add(Instantiate(generaterandomcard()));
-            GameObject createdcard = playerhands[playerturn][playerhands[playerturn].Count-1];
+            GameObject createdcard = playerhands[playerturn][playerhands[playerturn].Count-1]; // This just gets what was just made
             createdcard.GetComponent<card>().owner = playerturn;
-            hasdrew = true;
+            hasdraw = true;
             createdcard.transform.position = new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
         }
     }
-    
+    void removecard(int whichcard){
+        if(!hasdraw){
+            return;
+        }
+        if(hasdiscard){
+            return;
+        }
+        //Debug.Log(whichcard);
+        Destroy(playerhands[playerturn][whichcard]);
+        playerhands[playerturn].RemoveAt(whichcard);
+        for(int i = whichcard; i < playerhands[playerturn].Count; i++){
+            GameObject tempcard = playerhands[playerturn][i];
+            tempcard.transform.position = new Vector3(tempcard.transform.position.x - 1.5f, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
+        }
+        hasdiscard = true;
+    }
     void printcardstatus(){
         string response = "";
         for(int y = 0; y < actual_players; y++){

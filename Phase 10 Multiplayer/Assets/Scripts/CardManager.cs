@@ -19,10 +19,10 @@ public class CardManager : MonoBehaviour
     public GameObject card11;
     public GameObject card12;*/
     #endregion
-    //string[] colors = {"red", "blue", "green", "yellow"};
+    string[] colors = {"red", "blue", "green", "yellow"};
     //int[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-     string[] colors = {"blue"};
-    int[] numbers = {1};
+     //string[] colors = {"blue"};
+    int[] numbers = {1, 2, 3, 4};
     public TMP_Text turntext;
     int max_players = 6;
     int actual_players = 4;
@@ -53,8 +53,6 @@ public class CardManager : MonoBehaviour
             giveplayersstartingcards();
             displayplayercards(0);
     }
-    
-    
     void giveplayersstartingcards(){
         Vector3 cardpos = new Vector3(-8.15f, -5.25f, 0f);
         for(int y = 0; y < actual_players; y++){
@@ -69,6 +67,48 @@ public class CardManager : MonoBehaviour
                     newboardcard.SetActive(false);
             }
             cardpos.x = -8.15f;
+        }
+    }
+    public void playphase()
+    {
+        //Debug.Log("player going down: " + playerturn);
+        Dictionary<string, Dictionary<string, int>> cardcounts = new Dictionary<string, Dictionary<string, int>>();
+        foreach (string color in colors)
+        {
+            cardcounts[color] = new Dictionary<string, int>();
+            foreach (int num in numbers)
+            {
+                cardcounts[color][num.ToString()] = 0;
+            }
+        }
+        foreach (GameObject tempcard in playerhands[playerturn])
+        {
+            card cardscript = tempcard.GetComponent<card>();
+            cardcounts[cardscript.color][cardscript.type]++;
+            Debug.Log(cardscript.color + cardscript.type);
+        }
+        bool found1 = false;
+        bool found2 = false;
+        foreach (string color in colors)
+        {
+            foreach (int num in numbers)
+            {
+                if (cardcounts[color][num.ToString()] >= 3)
+                {
+                    if (found1 == false)
+                    {
+                        found1 = true;
+                    }
+                    else
+                    {
+                        found2 = true;
+                    }
+                }
+            }
+        }
+        if (found1 && found2)
+        {
+            Debug.Log("two sets of 3");
         }
     }
     GameObject generaterandomcard(){
@@ -86,11 +126,11 @@ public class CardManager : MonoBehaviour
                 playerhands[playerid][x].SetActive(true);
         }
     }
-    void endround(){
+    void endround(){//DO NOT USE
         playerturn = 0;
         round++;
     }
-    void endturn(){
+    public void endturn(){
         if(!hasdraw){
             return;
         }

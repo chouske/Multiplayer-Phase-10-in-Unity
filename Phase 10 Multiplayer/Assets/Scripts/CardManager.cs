@@ -24,6 +24,11 @@ public class CardManager : MonoBehaviour
      //string[] colors = {"blue"};
     int[] numbers = {1, 2, 3, 4};
     public TMP_Text turntext;
+    public TMP_Text roundtext;
+    float CARD_START_X = -10.15f;
+    float CARD_START_Y = -5.25f;
+    float CARD_GAP_X = 1.5f;
+    float CARD_GAP_Y = 3.0f;
     int max_players = 6;
     int actual_players = 4;
     int max_cards = 11;
@@ -54,22 +59,27 @@ public class CardManager : MonoBehaviour
             displayplayercards(0);
     }
     void giveplayersstartingcards(){
-        Vector3 cardpos = new Vector3(-8.15f, -5.25f, 0f);
-        for(int y = 0; y < actual_players; y++){
-            for(int x = 0; x < 10; x++){
-                    int index = x; //Needed because of weirdness with lambdas
-                    GameObject newboardcard = Instantiate(generaterandomcard());
-                    Debug.Log("y: " + y + " x: " + x);
-                    newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(index));
-                    newboardcard.transform.position = cardpos;
-                    cardpos.x = cardpos.x + 1.5f;
-                    playerhands[y].Add(newboardcard);
-                    newboardcard.SetActive(false);
+        Vector3 cardpos = new Vector3(CARD_START_X,  CARD_START_Y, 0f);
+        for (int y = 0; y < actual_players; y++)
+        {
+            for (int x = 0; x < 10; x++)
+            {
+                int index = x; //Needed because of weirdness with lambdas
+                int owner = y;
+                GameObject newboardcard = Instantiate(generaterandomcard());
+                newboardcard.GetComponent<card>().owner = owner;
+                //Debug.Log("y: " + y + " x: " + x);
+                newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(owner, index));
+                newboardcard.transform.position = cardpos;
+                cardpos.x = cardpos.x + CARD_GAP_X;
+                playerhands[y].Add(newboardcard);
+                //  newboardcard.SetActive(false);
             }
-            cardpos.x = -8.15f;
+            cardpos.x = CARD_START_X;
+            cardpos.y = cardpos.y + CARD_GAP_Y;
         }
     }
-    public void playphase()
+    public void playphase()//Current player
     {
         //Debug.Log("player going down: " + playerturn);
         Dictionary<string, Dictionary<string, int>> cardcounts = new Dictionary<string, Dictionary<string, int>>();
@@ -87,29 +97,85 @@ public class CardManager : MonoBehaviour
             cardcounts[cardscript.color][cardscript.type]++;
             Debug.Log(cardscript.color + cardscript.type);
         }
-        bool found1 = false;
-        bool found2 = false;
-        foreach (string color in colors)
+        if (checkphase(cardcounts, 2) == true)
         {
-            foreach (int num in numbers)
+            Debug.Log("phase 2 complete!");
+        }
+    }
+    bool checkphase(Dictionary<string, Dictionary<string, int>> cardcounts, int whatphase)
+    {
+        if (whatphase == 1)//2 sets of 3
+        {
+            int totalsets = 0;
+            foreach (string color in colors)
             {
-                if (cardcounts[color][num.ToString()] >= 3)
+                foreach (int num in numbers)
                 {
-                    if (found1 == false)
+                    if (checkset(cardcounts, color, num, 3) == true)
                     {
-                        found1 = true;
+                        totalsets++;
+                        if (totalsets == 2)
+                        {
+                            return true;
+                        }
                     }
-                    else
+                }
+            }
+
+        }
+        if (whatphase == 2)//1 set of 3 + 1 run of 4
+        {
+            bool hasrun = checkrun(cardcounts, 4);
+            if (hasrun == false)
+            {
+                return false;
+            }
+            int totalsets = 0;
+            foreach (string color in colors)
+            {
+                foreach (int num in numbers)
+                {
+                    if (checkset(cardcounts, color, num, 3) == true)
                     {
-                        found2 = true;
+                        return true;
                     }
                 }
             }
         }
-        if (found1 && found2)
+        return false;
+    }
+    bool checkset(Dictionary<string, Dictionary<string, int>> cardcounts, string color, int num, int quantity)
+    {
+        if (cardcounts[color][num.ToString()] >= quantity)
         {
-            Debug.Log("two sets of 3");
+            return true;
         }
+        return false;
+    }
+    bool checkrun(Dictionary<string, Dictionary<string, int>> cardcounts, int quantity)
+    {
+        int runcounter = 0;
+        foreach (int num in numbers)
+        {
+            bool found = false;
+            foreach (string color in colors)
+            {
+                if (cardcounts[color][num.ToString()] > 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found == true)
+            {
+                runcounter++;
+                if (runcounter == quantity)
+                {
+                    return true;
+                }
+            }
+        }
+        return false; 
     }
     GameObject generaterandomcard(){
         return allpossiblecards[Random.Range(0, allpossiblecards.Count)];
@@ -126,8 +192,12 @@ public class CardManager : MonoBehaviour
                 playerhands[playerid][x].SetActive(true);
         }
     }
-    void endround(){//DO NOT USE
+    public void endround(){
+        hasdiscard = false;
+        hasdraw = false;
         playerturn = 0;
+        roundtext.text = "Round " + (round + 1).ToString();
+        turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
         round++;
     }
     public void endturn(){
@@ -146,21 +216,34 @@ public class CardManager : MonoBehaviour
         turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
         hasdiscard = false;
         hasdraw = false;
-        hideallplayercards();
-        displayplayercards(playerturn);
+        //hideallplayercards();
+        //displayplayercards(playerturn);
+    }
+    GameObject getcard(int playerid, int index)
+    {
+        return playerhands[playerturn][index];
     }
     void drawcreatecard(){//Determines a random card, creates an object of it, and makes sure it has appeared
         if(!hasdraw){
             //playerhands[playerturn].Add(Instantiate(allpossiblecards[Random.Range(0, allpossiblecards.Count)]));
             playerhands[playerturn].Add(Instantiate(generaterandomcard()));
-            GameObject createdcard = playerhands[playerturn][playerhands[playerturn].Count-1]; // This just gets what was just made
+            int newcardindex = playerhands[playerturn].Count - 1;
+            GameObject createdcard = playerhands[playerturn][newcardindex]; // This just gets what was just made
+            createdcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerturn, newcardindex));
             createdcard.GetComponent<card>().owner = playerturn;
             hasdraw = true;
-            createdcard.transform.position = new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
+            createdcard.transform.position = new Vector3(CARD_START_X + (CARD_GAP_X * (playerhands[playerturn].Count - 1)), CARD_START_Y + CARD_GAP_Y*playerturn, 0f);
         }
-    }
-    void removecard(int whichcard){
-        if(!hasdraw){
+    }                                               
+    void removecard(int owner, int whichcard){
+        if (owner != playerturn)
+        {
+            Debug.Log("return!");
+            return;
+        }
+        Debug.Log("owner: " + owner + " which: " + whichcard);   
+        if (!hasdraw)
+        {
             return;
         }
         if(hasdiscard){
@@ -170,8 +253,11 @@ public class CardManager : MonoBehaviour
         Destroy(playerhands[playerturn][whichcard]);
         playerhands[playerturn].RemoveAt(whichcard);
         for(int i = whichcard; i < playerhands[playerturn].Count; i++){
-            GameObject tempcard = playerhands[playerturn][i];
-            tempcard.transform.position = new Vector3(tempcard.transform.position.x - 1.5f, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
+            int newcardindex = i;
+            GameObject tempcard = playerhands[playerturn][newcardindex];
+            tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
+            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerturn, newcardindex));
+            tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
         }
         hasdiscard = true;
     }

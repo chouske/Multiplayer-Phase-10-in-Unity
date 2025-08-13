@@ -48,7 +48,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 43
+  controlID: 89
   draggingID: 0
 --- !u!114 &3
 MonoBehaviour:
@@ -302,7 +302,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 0
     y: 649
-    width: 1469
+    width: 1468
     height: 345
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -344,8 +344,8 @@ MonoBehaviour:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 79}
-    m_SelectedIDs: 90b40000
-    m_LastClickedID: 46224
+    m_SelectedIDs: f8c70000
+    m_LastClickedID: 51192
     m_ExpandedIDs: 0000000020b10000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -401,9 +401,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 
-    m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 1
+    m_SelectedInstanceIDs: 32b00000
+    m_LastClickedInstanceID: 45106
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c623000084640000f66e0000909a0000366b00008e6a000004f9000026af0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1127,9 +1127,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 10.525271, y: -2.9623225, z: -0.9763082}
+    m_Target: {x: -6.1088195, y: 0.90532476, z: -1.0636232}
     speed: 2
-    m_Value: {x: 10.525271, y: -2.9623225, z: -0.9763082}
+    m_Value: {x: -6.1088195, y: 0.90532476, z: -1.0636232}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1179,9 +1179,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 2.8257551
+    m_Target: 11.557286
     speed: 2
-    m_Value: 2.8257551
+    m_Value: 11.557286
   m_Ortho:
     m_Target: 1
     speed: 2

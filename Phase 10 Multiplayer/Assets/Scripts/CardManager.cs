@@ -19,11 +19,11 @@ public class CardManager : MonoBehaviour
     public GameObject card11;
     public GameObject card12;*/
     #endregion
-    string[] colors = {"red", "blue", "green", "yellow"};
+    string[] colors = { "red", "blue", "green", "yellow" };
     GameObject discardpile;
     //int[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
     //string[] colors = {"blue"};
-    int[] numbers = {1, 2, 3, 4};
+    int[] numbers = { 1, 2, 3, 4 };
     public TMP_Text turntext;
     public TMP_Text roundtext;
     float CARD_START_X = -10.15f;
@@ -38,11 +38,15 @@ public class CardManager : MonoBehaviour
     int playerturn = 0;
     bool hasdiscard = false;
     bool hasdraw = false;
-    List<GameObject> allpossiblecards;
+    //List<GameObject> allpossiblecards;
+    Dictionary<string, Dictionary<string, GameObject>> allpossiblecards = new Dictionary<string, Dictionary<string, GameObject>>();
     List<GameObject>[] playerhands;
     void Start()
     {
-        allpossiblecards = new List<GameObject>();
+        foreach (string color in colors)
+        {
+            allpossiblecards[color] = new Dictionary<string, GameObject>();
+        }
         playerhands  = new List<GameObject>[actual_players];
         for (int i = 0; i < actual_players; i++)
             {
@@ -51,34 +55,28 @@ public class CardManager : MonoBehaviour
             foreach(string color in colors){
                 foreach(int num in numbers){
                     //Debug.Log(color + num.ToString());
-                    if((num < 5)){
+                    if ((num < 5))
+                    {
                         GameObject card = Resources.Load<GameObject>("Prefabs/" + color + num.ToString());
-                        allpossiblecards.Add(card);
+                        //allpossiblecards.Add(card);
+                        allpossiblecards[color][num.ToString()] = card;
+                            
                     }
-                }
+                    }
             }
             giveplayersstartingcards();
-            displayplayercards(0);
+            //displayplayercards(0);
     }
     void giveplayersstartingcards(){
-        Vector3 cardpos = new Vector3(CARD_START_X,  CARD_START_Y, 0f);
         for (int y = 0; y < actual_players; y++)
         {
             for (int x = 0; x < 10; x++)
             {
                 int index = x; //Needed because of weirdness with lambdas
                 int owner = y;
-                GameObject newboardcard = Instantiate(generaterandomcard());
-                newboardcard.GetComponent<card>().owner = owner;
-                //Debug.Log("y: " + y + " x: " + x);
-                newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(owner, index));
-                newboardcard.transform.position = cardpos;
-                cardpos.x = cardpos.x + CARD_GAP_X;
-                playerhands[y].Add(newboardcard);
-                //  newboardcard.SetActive(false);
+                var randomcard = generaterandomcard();
+                giveplayercard(owner, randomcard.Item1, randomcard.Item2);
             }
-            cardpos.x = CARD_START_X;
-            cardpos.y = cardpos.y + CARD_GAP_Y;
         }
     }
     public void playphase()//Current player
@@ -415,18 +413,22 @@ public class CardManager : MonoBehaviour
                 }
             }
         }
-        return false; 
+        return false;
     }
-    GameObject generaterandomcard(){
-        return allpossiblecards[Random.Range(0, allpossiblecards.Count)];
+    //GameObject generaterandomcard()
+    (string, string) generaterandomcard()
+    {
+        string randomColor = colors[Random.Range(0, colors.Length)];
+        string randomNumber = numbers[Random.Range(0, numbers.Length)].ToString();
+        return (randomColor, randomNumber);
     }
-    void hideallplayercards(){
+    /*void hideallplayercards(){
         for(int y = 0; y < actual_players; y++){
             for(int x = 0; x < playerhands[y].Count; x++){
                         playerhands[y][x].SetActive(false);
             }
         }
-    }
+    }*/
     void displayplayercards(int playerid){
         for(int x = 0; x < playerhands[playerid].Count; x++){
                 playerhands[playerid][x].SetActive(true);
@@ -459,29 +461,21 @@ public class CardManager : MonoBehaviour
         //hideallplayercards();
         //displayplayercards(playerturn);
     }
-    GameObject getcard(int playerid, int index)
+    /*GameObject getcard(int playerid, int index)
     {
         return playerhands[playerturn][index];
-    }
+    }*/
     void drawcreatecard(){//Determines a random card, creates an object of it, and makes sure it has appeared
         if(!hasdraw){
-            //playerhands[playerturn].Add(Instantiate(allpossiblecards[Random.Range(0, allpossiblecards.Count)]));
-            playerhands[playerturn].Add(Instantiate(generaterandomcard()));
-            int newcardindex = playerhands[playerturn].Count - 1;
-            GameObject createdcard = playerhands[playerturn][newcardindex]; // This just gets what was just made
-            /*createdcard.GetComponentInChildren<Button>().onClick.AddListener(() => {
-                createdcard.transform.position = new Vector3(9.14f, 0.5f, 416.2204f);
-            });*/
-            createdcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerturn, newcardindex));
-            createdcard.GetComponent<card>().owner = playerturn;
+            var randomcard = generaterandomcard();
+            giveplayercard(playerturn, randomcard.Item1, randomcard.Item2);
             hasdraw = true;
-            createdcard.transform.position = new Vector3(CARD_START_X + (CARD_GAP_X * (playerhands[playerturn].Count - 1)), CARD_START_Y + CARD_GAP_Y*playerturn, 0f);
         }
     }                                               
     void removecard(int owner, int whichcard){
         if (owner != playerturn)
         {
-            Debug.Log("return!");
+            Debug.Log("Failed to remove card");
             return;
         }
         Debug.Log("owner: " + owner + " which: " + whichcard);   
@@ -493,25 +487,44 @@ public class CardManager : MonoBehaviour
             return;
         }
         //Debug.Log(whichcard);
-        //Destroy(playerhands[playerturn][whichcard]);
         Destroy(discardpile);
         GameObject cardtomove = playerhands[playerturn][whichcard];
         cardtomove.transform.position = DISCARD_POSITION;
         discardpile = cardtomove;
+        card cardscript = cardtomove.GetComponent<card>();
+        cardtomove.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
+        cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() => {
+            if (!hasdraw) {
+                Destroy(cardtomove);
+                giveplayercard(playerturn, cardscript.color, cardscript.type);
+                hasdraw = true;
+            }
+        ;
+        });
         playerhands[playerturn].RemoveAt(whichcard);
         for(int i = whichcard; i < playerhands[playerturn].Count; i++){
             int newcardindex = i;
             GameObject tempcard = playerhands[playerturn][newcardindex];
             tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-            /*tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => {
-                temp.transform.position = new Vector3(9.14f, 0.5f, 416.2204f);
-            });*/
             tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerturn, newcardindex));
             tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
         }
         hasdiscard = true;
     }
-    void printcardstatus(){
+    GameObject giveplayercard(int playerid, string color, string num)
+    {
+        GameObject newboardcard = Instantiate(allpossiblecards[color][num]);
+        newboardcard.GetComponent<card>().owner = playerid;
+        int beforecardcount = playerhands[playerid].Count;
+        Vector3 cardpos = new Vector3(CARD_START_X + CARD_GAP_X*beforecardcount,  CARD_START_Y + CARD_GAP_Y * playerid, 0f);
+        newboardcard.transform.position = cardpos;
+        playerhands[playerid].Add(newboardcard);
+        int newcardindex = playerhands[playerid].Count - 1;
+        newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerid, newcardindex));
+        
+        return null;
+    }
+    /*void printcardstatus(){
         string response = "";
         for(int y = 0; y < actual_players; y++){
             response += "Player " + (y+1) + ":";
@@ -527,5 +540,5 @@ public class CardManager : MonoBehaviour
             response += "\n";
         }
         Debug.Log(response);
-    }
+    }*/
 }

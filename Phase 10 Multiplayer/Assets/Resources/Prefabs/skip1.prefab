@@ -586,7 +586,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -2625571652349370520, guid: 3c923241e4123e2478ce8812161c6a57, type: 3}
+  m_Sprite: {fileID: -6117631940653967380, guid: d030d80e1a312744d99643d86833c9da, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -610,5 +610,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 1
-  color: blue
+  color: skip
   owner: 0

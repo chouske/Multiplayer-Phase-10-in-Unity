@@ -19,7 +19,7 @@ public class CardManager : MonoBehaviour
     public GameObject card11;
     public GameObject card12;*/
     #endregion
-    string[] colors = { "red", "blue", "green", "yellow" };
+    string[] colors = { "red", "blue", "green", "yellow", "skip" };
     GameObject discardpile;
     //int[] numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
     //string[] colors = {"blue"};
@@ -52,20 +52,27 @@ public class CardManager : MonoBehaviour
             {
                 playerhands[i] = new List<GameObject>();
             }
-            foreach(string color in colors){
-                foreach(int num in numbers){
-                    //Debug.Log(color + num.ToString());
-                    if ((num < 5))
-                    {
-                        GameObject card = Resources.Load<GameObject>("Prefabs/" + color + num.ToString());
-                        //allpossiblecards.Add(card);
-                        allpossiblecards[color][num.ToString()] = card;
-                            
-                    }
-                    }
+        foreach (string color in colors)
+        {
+            if (color == "skip")
+            {
+                continue;
             }
-            giveplayersstartingcards();
-            //displayplayercards(0);
+            foreach (int num in numbers)
+            {
+                //Debug.Log(color + num.ToString());
+                if ((num < 5))
+                {
+                    GameObject card = Resources.Load<GameObject>("Prefabs/" + color + num.ToString());
+                    //allpossiblecards.Add(card);
+                    allpossiblecards[color][num.ToString()] = card;
+
+                }
+            }      
+        }
+        GameObject skipcard = Resources.Load<GameObject>("Prefabs/skip1");
+        allpossiblecards["skip"]["1"] = skipcard;
+        giveplayersstartingcards();
     }
     void giveplayersstartingcards(){
         for (int y = 0; y < actual_players; y++)
@@ -97,9 +104,9 @@ public class CardManager : MonoBehaviour
             cardcounts[cardscript.color][cardscript.type]++;
             //Debug.Log(cardscript.color + cardscript.type);
         }
-        if (checkphase(cardcounts, 10) == true)
+        if (checkphase(cardcounts, 1) == true)
         {
-            Debug.Log("phase 10 complete!");
+            Debug.Log("phase 1 complete!");
         }
     }
     bool checkphase(Dictionary<string, Dictionary<string, int>> cardcounts, int whatphase)
@@ -365,6 +372,10 @@ public class CardManager : MonoBehaviour
         Dictionary<string, Dictionary<string, int>> copycounts = new Dictionary<string, Dictionary<string, int>>();
         foreach (string color in colors)
         {
+            if (color == "skip")
+            {
+                continue;
+            }
             copycounts[color] = new Dictionary<string, int>();
             foreach (int num in numbers)
             {
@@ -374,6 +385,10 @@ public class CardManager : MonoBehaviour
         int total = 0;
         foreach (string color in colors)
         {
+            if (color == "skip")
+            {
+                continue;
+            }
             int pretotal = total;
             total += cardcounts[color][setofwhat.ToString()];
             if (total >= setlength)
@@ -381,6 +396,10 @@ public class CardManager : MonoBehaviour
                 copycounts[color][setofwhat.ToString()] += setlength - pretotal;//total - pretotal;
                 foreach (string newcolor in colors)
                 {
+                    if (newcolor == "skip")
+                    {
+                        continue;
+                    }
                     cardcounts[newcolor][setofwhat.ToString()] -= copycounts[newcolor][setofwhat.ToString()];
                 }
                 return true;
@@ -420,6 +439,10 @@ public class CardManager : MonoBehaviour
     {
         string randomColor = colors[Random.Range(0, colors.Length)];
         string randomNumber = numbers[Random.Range(0, numbers.Length)].ToString();
+        if (randomColor == "skip")
+        {
+            randomNumber = "1";
+        }
         return (randomColor, randomNumber);
     }
     /*void hideallplayercards(){
@@ -429,11 +452,11 @@ public class CardManager : MonoBehaviour
             }
         }
     }*/
-    void displayplayercards(int playerid){
+    /*void displayplayercards(int playerid){
         for(int x = 0; x < playerhands[playerid].Count; x++){
                 playerhands[playerid][x].SetActive(true);
         }
-    }
+    }*/
     public void endround(){
         hasdiscard = false;
         hasdraw = false;
@@ -443,17 +466,27 @@ public class CardManager : MonoBehaviour
         round++;
     }
     public void endturn(){
+        int loopcount = 1;
+        if (discardpile.GetComponent<card>().color == "skip")
+        {
+            loopcount = 2;
+        }
         if(!hasdraw){
             return;
         }
         if(!hasdiscard){
             return;
         }
-        if(playerturn == (actual_players-1)){   
-            playerturn = 0;
-        }
-        else{
-            playerturn++;
+        for (int i = 0; i < loopcount; i++)
+            {
+                if (playerturn == (actual_players - 1))
+            {
+                playerturn = 0;
+            }
+            else
+            {
+                playerturn++;
+            }
         }
         turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
         hasdiscard = false;

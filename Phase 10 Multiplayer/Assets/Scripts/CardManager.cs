@@ -26,6 +26,8 @@ public class CardManager : MonoBehaviour
     int[] numbers = { 1, 2, 3, 4 };
     public TMP_Text turntext;
     public TMP_Text roundtext;
+    public TMP_Text phasebuttontext;
+    public TMP_Text eachphasetext;
     float CARD_START_X = -10.15f;
     float CARD_START_Y = -5.25f;
     float CARD_GAP_X = 1.5f;
@@ -38,20 +40,33 @@ public class CardManager : MonoBehaviour
     int playerturn = 0;
     bool hasdiscard = false;
     bool hasdraw = false;
+    bool editingphase = false;
+    List<GameObject> phasebuildercards;
+    List<int> phasebuilderindices;
     //List<GameObject> allpossiblecards;
     Dictionary<string, Dictionary<string, GameObject>> allpossiblecards = new Dictionary<string, Dictionary<string, GameObject>>();
     List<GameObject>[] playerhands;
+    int[] playerphases;
+    int[] phaserequirements = {6, 7, 8, 7, 8, 9, 8, 7, 7, 8};
     void Start()
     {
+        playerphases = new int[actual_players];
+        for (int y = 0; y < actual_players; y++)
+        {
+            playerphases[y] = 7;
+            eachphasetext.text += "Player " + (y+1).ToString() + ": Phase 1\n";
+        }
+        phasebuildercards = new List<GameObject>();
+        phasebuilderindices = new List<int>();
         foreach (string color in colors)
         {
             allpossiblecards[color] = new Dictionary<string, GameObject>();
         }
-        playerhands  = new List<GameObject>[actual_players];
+        playerhands = new List<GameObject>[actual_players];
         for (int i = 0; i < actual_players; i++)
-            {
-                playerhands[i] = new List<GameObject>();
-            }
+        {
+            playerhands[i] = new List<GameObject>();
+        }
         foreach (string color in colors)
         {
             if (color == "skip")
@@ -68,13 +83,14 @@ public class CardManager : MonoBehaviour
                     allpossiblecards[color][num.ToString()] = card;
 
                 }
-            }      
+            }
         }
         GameObject skipcard = Resources.Load<GameObject>("Prefabs/skip1");
         allpossiblecards["skip"]["1"] = skipcard;
         giveplayersstartingcards();
     }
-    void giveplayersstartingcards(){
+    void giveplayersstartingcards()
+    {
         for (int y = 0; y < actual_players; y++)
         {
             for (int x = 0; x < 10; x++)
@@ -88,7 +104,16 @@ public class CardManager : MonoBehaviour
     }
     public void playphase()//Current player
     {
-        //Debug.Log("player going down: " + playerturn);
+        if (editingphase)
+        {
+            editingphase = false;
+            phasebuttontext.text = "Play Phase";
+            phasebuildercards.Clear();
+            phasebuilderindices.Clear();
+            return;
+        }
+        phasebuttontext.text = "Cancel phase";
+        editingphase = true;
         Dictionary<string, Dictionary<string, int>> cardcounts = new Dictionary<string, Dictionary<string, int>>();
         foreach (string color in colors)
         {
@@ -104,270 +129,134 @@ public class CardManager : MonoBehaviour
             cardcounts[cardscript.color][cardscript.type]++;
             //Debug.Log(cardscript.color + cardscript.type);
         }
-        if (checkphase(cardcounts, 1) == true)
+        /*if (checkphase(phasebuildercards, 1) == true)
         {
             Debug.Log("phase 1 complete!");
-        }
+        }*/
     }
-    bool checkphase(Dictionary<string, Dictionary<string, int>> cardcounts, int whatphase)
+    bool checkphase(List<GameObject> cardcounts, int whatphase)
     {
         if (whatphase == 1)//2 sets of 3
         {
-            int totalsets = 0;
-            foreach (int num in numbers)
+            Debug.Log("Phase 1 check");
+            for (int z = 0; z < 2; z++)
             {
-                if (checkset(cardcounts, num, 3) == true)
+                if (!checkset(cardcounts, 3))
                 {
-                    Debug.Log(num + " has a set of 3");
-                    totalsets++;
-                    if (totalsets == 2)
-                    {
-                        foreach (string color in colors)
-                        {
-                            foreach (int curnum in numbers){
-                                if (cardcounts[color][curnum.ToString()] > 0)
-                                {
-                                    Debug.Log(color + " " + curnum.ToString() + ": " + cardcounts[color][curnum.ToString()]);
-                                }
-                            }
-                        }
-                        return true;
-                    }
-                    if (checkset(cardcounts, num, 3) == true)
-                    {
-                        Debug.Log(num + " Bonus set of 3");
-                        totalsets++;
-                        if (totalsets == 2)
-                        {
-                            foreach (string color in colors)
-                            {
-                                foreach (int curnum in numbers){
-                                    if (cardcounts[color][curnum.ToString()] > 0)
-                                    {
-                                        Debug.Log(color + " " + curnum.ToString() + ": " + cardcounts[color][curnum.ToString()]);
-                                    }
-                                }
-                            }
-                            return true;
-                        }
-                    }
+                    return false;
+                }
+                for (int x = 0; x < 3; x++)
+                {
+                    cardcounts.RemoveAt(0);
                 }
             }
         }
-        if (whatphase == 2)//1 set of 3 + 1 run of 4
+        else if (whatphase == 2)
         {
-            Dictionary<string, Dictionary<string, int>> copydict = new Dictionary<string, Dictionary<string, int>>();
-            foreach (int outernum in numbers)//Test for all numbers, make a set and then a run
-            {
-                foreach (string color in colors)//Finish making copydict
-                {
-                    copydict[color] = new Dictionary<string, int>();
-                    foreach (int num in numbers)
-                    {
-                        copydict[color][num.ToString()] = cardcounts[color][num.ToString()];
-                    }   
-                }
-                if (checkset(copydict,outernum, 3) == true)
-                {
-                    if (checkrun(copydict, 4) == true)
-                    {
-                        Debug.Log("Built with a set of " + outernum.ToString());
-                        return true;
-                    }
-                }
-
-            }
-            /*bool hasrun = checkrun(cardcounts, 4);
-            if (hasrun == false)
+            Debug.Log("Phase 2 check");
+            if (!checkset(cardcounts, 3))
             {
                 return false;
             }
-            foreach (int num in numbers)
+            for (int x = 0; x < 3; x++)
             {
-                if (checkset(cardcounts,num, 3) == true)
-                {
-                    return true;
-                }
-            }*/
-        }
-        if (whatphase == 3)//1 set of 4 + 1 run of 4
-        {
-            Dictionary<string, Dictionary<string, int>> copydict = new Dictionary<string, Dictionary<string, int>>();
-            foreach (int outernum in numbers)//Test for all numbers, make a set and then a run
-            {
-                foreach (string color in colors)//Finish making copydict
-                {
-                    copydict[color] = new Dictionary<string, int>();
-                    foreach (int num in numbers)
-                    {
-                        copydict[color][num.ToString()] = cardcounts[color][num.ToString()];
-                    }   
-                }
-                if (checkset(copydict,outernum, 4) == true)
-                {
-                    Debug.Log("remaining when set " + outernum.ToString() + " exists: ");
-                    foreach (string color in colors)
-                    {
-                        foreach (int curnum in numbers)
-                        {
-                            if (copydict[color][curnum.ToString()] > 0)
-                            {
-                                Debug.Log(color + " " + curnum.ToString() + ": " + copydict[color][curnum.ToString()]);
-                            }
-                        }
-                    }
-                    if (checkrun(copydict, 4) == true)
-                    {
-                        Debug.Log("Built with a set of " + outernum.ToString());
-                        return true;
-                    }
-                }
-
+                cardcounts.RemoveAt(0);
             }
-        }
-        if (whatphase == 4)//1 run of 7
-        {
-            bool hasrun = checkrun(cardcounts, 7);
-            if (hasrun == false)
+            if (!checkrun(cardcounts, 4))
             {
                 return false;
             }
         }
-        if (whatphase == 5)//1 run of 8
+        else if (whatphase == 3)
         {
-            bool hasrun = checkrun(cardcounts, 8);
-            if (hasrun == false)
+            Debug.Log("Phase 3 check");
+            if (!checkset(cardcounts, 3))
+            {
+                return false;
+            }
+            for (int x = 0; x < 3; x++)
+            {
+                cardcounts.RemoveAt(0);
+            }
+            if (!checkrun(cardcounts, 4))
             {
                 return false;
             }
         }
-        if (whatphase == 6)//1 run of 9
+        else if (whatphase == 4)
         {
-            bool hasrun = checkrun(cardcounts, 9);
-            if (hasrun == false)
+            Debug.Log("Phase 4 check");
+            if (!checkrun(cardcounts, 7))
             {
                 return false;
             }
         }
-        if (whatphase == 7)//2 sets of 4
+        else if (whatphase == 5)
         {
-            int totalsets = 0;
-            foreach (int num in numbers)
+            Debug.Log("Phase 5 check");
+            if (!checkrun(cardcounts, 8))
             {
-                if (checkset(cardcounts, num, 4) == true)
+                return false;
+            }
+        }
+        else if (whatphase == 6)
+        {
+            Debug.Log("Phase 6 check");
+            if (!checkrun(cardcounts, 9))
+            {
+                return false;
+            }
+        }
+        else if (whatphase == 7)
+        {
+            Debug.Log("Phase 7 check");
+            for (int z = 0; z < 2; z++)
+            {
+                if (!checkset(cardcounts, 4))
                 {
-                    totalsets++;
-                    if (totalsets == 2)
-                    {
-                        foreach (string color in colors)
-                        {
-                            foreach (int curnum in numbers){
-                                if (cardcounts[color][curnum.ToString()] > 0)
-                                {
-                                    Debug.Log(color + " " + curnum.ToString() + ": " + cardcounts[color][curnum.ToString()]);
-                                }
-                            }
-                        }
-                        return true;
-                    }
-                    if (checkset(cardcounts, num, 4) == true)
-                    {
-                        totalsets++;
-                        if (totalsets == 2)
-                        {
-                            foreach (string color in colors)
-                            {
-                                foreach (int curnum in numbers){
-                                    if (cardcounts[color][curnum.ToString()] > 0)
-                                    {
-                                        Debug.Log(color + " " + curnum.ToString() + ": " + cardcounts[color][curnum.ToString()]);
-                                    }
-                                }
-                            }
-                            return true;
-                        }
-                    }
+                    return false;
+                }
+                for (int x = 0; x < 4; x++)
+                {
+                    cardcounts.RemoveAt(0);
                 }
             }
         }
-        if (whatphase == 8)//7 cards of 1 color
+        else if (whatphase == 9)
         {
-            foreach (string color in colors)
+            Debug.Log("Phase 9 check");
+            if (!checkset(cardcounts, 5))
             {
-                int colorcount = 0;
-                foreach (int num in numbers)
-                {
-                    colorcount += cardcounts[color][num.ToString()];
-                    if(colorcount >= 7){
-                        return true;
-                    }
-                }
+                return false;
             }
-
-        }
-        if (whatphase == 9)
-        {
-            bool foundbig = false;
-            bool foundsmall = false;
-            foreach (int num in numbers)
+            for (int x = 0; x < 5; x++)
             {
-                if (checkset(cardcounts, num, 7) == true)
-                {
-                    return true;
-                }
-                if (checkset(cardcounts, num, 5))
-                {
-                    if ((foundbig == true) || (foundsmall == true))
-                    {
-                        return true;
-                    }
-                    foundbig = true;
-                }
-                else if (checkset(cardcounts, num, 2))
-                {
-                    if (foundbig == true)
-                    {
-                        return true;
-                    }
-                    foundsmall = true;
-                }                
+                cardcounts.RemoveAt(0);
+            }
+            if (!checkrun(cardcounts, 2))
+            {
+                return false;
             }
         }
-        if (whatphase == 10)
+        else if (whatphase == 10)
         {
-            bool foundbig = false;
-            bool foundsmall = false;
-            foreach (int num in numbers)
+            Debug.Log("Phase 10 check");
+            if (!checkset(cardcounts, 5))
             {
-                if (checkset(cardcounts, num, 8) == true)
-                {
-                    return true;
-                }
-                if (checkset(cardcounts, num, 5))
-                {
-                    if ((foundbig == true) || (foundsmall == true))
-                    {
-                        return true;
-                    }
-                    foundbig = true;
-                }
-                else if (checkset(cardcounts, num, 3))
-                {
-                    if (foundbig == true)
-                    {
-                        return true;
-                    }
-                    foundsmall = true;
-                }                
+                return false;
+            }
+            for (int x = 0; x < 5; x++)
+            {
+                cardcounts.RemoveAt(0);
+            }
+            if (!checkrun(cardcounts, 3))
+            {
+                return false;
             }
         }
-        else//1 set of 5 + 1 set of 3
-        {
-
-        }
-        return false;
+        return true;
     }
-    bool checkset(Dictionary<string, Dictionary<string, int>> cardcounts, int setofwhat, int setlength)
+    /*bool checksetold(Dictionary<string, Dictionary<string, int>> cardcounts, int setofwhat, int setlength)
     {
         Dictionary<string, Dictionary<string, int>> copycounts = new Dictionary<string, Dictionary<string, int>>();
         foreach (string color in colors)
@@ -403,38 +292,63 @@ public class CardManager : MonoBehaviour
                     cardcounts[newcolor][setofwhat.ToString()] -= copycounts[newcolor][setofwhat.ToString()];
                 }
                 return true;
-            }   
+            }
             copycounts[color][setofwhat.ToString()] += cardcounts[color][setofwhat.ToString()];
         }
         return false;
-    }
-    bool checkrun(Dictionary<string, Dictionary<string, int>> cardcounts, int quantity)
+    }*/
+    bool checkset(List<GameObject> cardcounts, int setlength)
     {
-        int runcounter = 0;
-        foreach (int num in numbers)
+        bool foundfirst = false;
+        string firstnum = "";
+        int dictsize = cardcounts.Count;
+        for (int z = 0; z < setlength; z++)
         {
-            bool found = false;
-            foreach (string color in colors)
+            string cardtype = cardcounts[z].GetComponent<card>().type;
+            if (!foundfirst)
             {
-                if (cardcounts[color][num.ToString()] > 0)
-                {
-                    cardcounts[color][num.ToString()] -= 1;
-                    found = true;
-                    break;
-                }
+                firstnum = cardtype;
+                foundfirst = true;
             }
-            if (found == true)
+            else
             {
-                runcounter++;
-                if (runcounter == quantity)
+                if (cardtype != firstnum)
                 {
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
     }
-    //GameObject generaterandomcard()
+    bool checkrun(List<GameObject> cardcounts, int runlength)
+    {
+        bool foundfirst = false;
+        string firstnum = "";
+        int dictsize = cardcounts.Count;
+        /*if (runlength > dictsize)
+        {
+            return false;
+        }*/
+        for (int z = 0; z < runlength; z++)
+        {
+            string cardtype = cardcounts[z].GetComponent<card>().type;
+            Debug.Log("card type: " + cardtype);
+            if (!foundfirst)
+            {
+                firstnum = cardtype;
+                foundfirst = true;
+            }
+            else
+            {   
+                if (cardtype != (int.Parse(firstnum) + 1).ToString())
+                {
+                    return false;
+                }
+                firstnum = (int.Parse(firstnum)+1).ToString();
+            }
+        }
+        return true;
+    }
     (string, string) generaterandomcard()
     {
         string randomColor = colors[Random.Range(0, colors.Length)];
@@ -457,29 +371,46 @@ public class CardManager : MonoBehaviour
                 playerhands[playerid][x].SetActive(true);
         }
     }*/
-    public void endround(){
+    public void endround()
+    {
         hasdiscard = false;
         hasdraw = false;
         playerturn = 0;
-        roundtext.text = "Round " + (round + 1).ToString();
-        turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
         round++;
+        roundtext.text = "Round " + (round + 1).ToString();
+        turntext.text = "Player 1's turn";
+        for (int i = 0; i < actual_players; i++)
+        {
+            foreach (GameObject card in playerhands[i])
+            {
+                Destroy(card);
+            }
+            playerhands[i].Clear();
+        }
+        giveplayersstartingcards();
     }
-    public void endturn(){
+    public void endturn()
+    {
+        editingphase = false;
+        phasebuildercards.Clear();
+        phasebuilderindices.Clear();
+        phasebuttontext.text = "Play Phase";
         int loopcount = 1;
         if (discardpile.GetComponent<card>().color == "skip")
         {
             loopcount = 2;
         }
-        if(!hasdraw){
+        if (!hasdraw)
+        {
             return;
         }
-        if(!hasdiscard){
+        if (!hasdiscard)
+        {
             return;
         }
         for (int i = 0; i < loopcount; i++)
-            {
-                if (playerturn == (actual_players - 1))
+        {
+            if (playerturn == (actual_players - 1))
             {
                 playerturn = 0;
             }
@@ -498,25 +429,29 @@ public class CardManager : MonoBehaviour
     {
         return playerhands[playerturn][index];
     }*/
-    void drawcreatecard(){//Determines a random card, creates an object of it, and makes sure it has appeared
-        if(!hasdraw){
+    void drawcreatecard()
+    {//Determines a random card, creates an object of it, and makes sure it has appeared
+        if (!hasdraw)
+        {
             var randomcard = generaterandomcard();
             giveplayercard(playerturn, randomcard.Item1, randomcard.Item2);
             hasdraw = true;
         }
-    }                                               
-    void removecard(int owner, int whichcard){
+    }
+    void removecard(int owner, int whichcard)
+    {
         if (owner != playerturn)
         {
             Debug.Log("Failed to remove card");
             return;
         }
-        Debug.Log("owner: " + owner + " which: " + whichcard);   
+        Debug.Log("owner: " + owner + " which: " + whichcard);
         if (!hasdraw)
         {
             return;
         }
-        if(hasdiscard){
+        if (hasdiscard)
+        {
             return;
         }
         //Debug.Log(whichcard);
@@ -526,8 +461,10 @@ public class CardManager : MonoBehaviour
         discardpile = cardtomove;
         card cardscript = cardtomove.GetComponent<card>();
         cardtomove.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-        cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() => {
-            if (!hasdraw) {
+        cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
+        {
+            if (!hasdraw)
+            {
                 Destroy(cardtomove);
                 giveplayercard(playerturn, cardscript.color, cardscript.type);
                 hasdraw = true;
@@ -535,7 +472,8 @@ public class CardManager : MonoBehaviour
         ;
         });
         playerhands[playerturn].RemoveAt(whichcard);
-        for(int i = whichcard; i < playerhands[playerturn].Count; i++){
+        for (int i = whichcard; i < playerhands[playerturn].Count; i++)
+        {
             int newcardindex = i;
             GameObject tempcard = playerhands[playerturn][newcardindex];
             tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
@@ -549,29 +487,71 @@ public class CardManager : MonoBehaviour
         GameObject newboardcard = Instantiate(allpossiblecards[color][num]);
         newboardcard.GetComponent<card>().owner = playerid;
         int beforecardcount = playerhands[playerid].Count;
-        Vector3 cardpos = new Vector3(CARD_START_X + CARD_GAP_X*beforecardcount,  CARD_START_Y + CARD_GAP_Y * playerid, 0f);
+        Vector3 cardpos = new Vector3(CARD_START_X + CARD_GAP_X * beforecardcount, CARD_START_Y + CARD_GAP_Y * playerid, 0f);
         newboardcard.transform.position = cardpos;
         playerhands[playerid].Add(newboardcard);
         int newcardindex = playerhands[playerid].Count - 1;
-        newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerid, newcardindex));
-        
+        newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(playerid, newcardindex));
+
         return null;
     }
-    /*void printcardstatus(){
-        string response = "";
-        for(int y = 0; y < actual_players; y++){
-            response += "Player " + (y+1) + ":";
-            for(int x = 0; x < playerhands[y].Count; x++){
-                    //if(playerhands[y][x] != null){
-                        card tempcard = playerhands[y][x].GetComponent<card>();
-                        response += tempcard.color + " " + tempcard.type;
-                        if(x != (playerhands[y].Count-1)){
-                            response += ", ";
-                        }
-                //}   
-            }
-            response += "\n";
+    void interactwithcard(int owner, int whichcard)
+    {
+        if (owner != playerturn)
+        {
+            return;
         }
-        Debug.Log(response);
-    }*/
+        if (editingphase)
+        {
+            GameObject phasecard = playerhands[playerturn][whichcard];
+            if (phasecard.GetComponent<card>().color == "skip")
+            {
+                return;
+            }
+            int containsindex = phasebuilderindices.IndexOf(whichcard);
+            if (containsindex != -1)//The hand index of that card is already in the list
+            {
+                phasebuilderindices.RemoveAt(containsindex);
+                phasebuildercards.RemoveAt(phasebuildercards.IndexOf(phasecard));
+            }
+            else//Doesn't exist
+            {
+                Debug.Log("Added a card");
+                //int currentphase = 1;
+                phasebuilderindices.Add(whichcard);
+                phasebuildercards.Add(phasecard);
+                if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn]-1]))
+                {
+                    Debug.Log("Doing Check");
+                    Debug.Log("How many in builder: " + phasebuildercards.Count);
+                    Debug.Log("player turn: " + playerturn);
+                    /*Debug.Log("requirements: " + phaserequirements[playerphases[playerturn]]);*/
+                    if (checkphase(phasebuildercards, playerphases[playerturn]) == true)
+                    {
+                        int winner = playerturn;
+                        endround();
+                        updatephasedata(winner);
+                    }
+                    editingphase = false;
+                    phasebuildercards.Clear();
+                    phasebuilderindices.Clear();
+                    phasebuttontext.text = "Play Phase";
+                }
+                
+            }
+        }
+        else
+        {
+            removecard(owner, whichcard);
+        }
+    }
+    void updatephasedata(int winner)
+    {
+        playerphases[winner] += 1;
+        eachphasetext.text = "";
+        for(int x = 0; x < playerphases.Length; x++)
+        {
+            eachphasetext.text += "Player " + (x+1).ToString() + ": Phase " + playerphases[x].ToString() + "\n";
+        }
+    }
 }

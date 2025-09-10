@@ -53,7 +53,7 @@ public class CardManager : MonoBehaviour
         playerphases = new int[actual_players];
         for (int y = 0; y < actual_players; y++)
         {
-            playerphases[y] = 7;
+            playerphases[y] = 1;
             eachphasetext.text += "Player " + (y+1).ToString() + ": Phase 1\n";
         }
         phasebuildercards = new List<GameObject>();
@@ -108,6 +108,10 @@ public class CardManager : MonoBehaviour
         {
             editingphase = false;
             phasebuttontext.text = "Play Phase";
+            foreach (GameObject tempcard in playerhands[playerturn])
+            {
+                tempcard.GetComponent<SpriteRenderer>().color = Color.white;
+            }
             phasebuildercards.Clear();
             phasebuilderindices.Clear();
             return;
@@ -220,6 +224,14 @@ public class CardManager : MonoBehaviour
                 {
                     cardcounts.RemoveAt(0);
                 }
+            }
+        }
+        else if (whatphase == 8)
+        {
+            Debug.Log("Phase 8 check");
+            if (!checkcolor(cardcounts, 7))
+            {
+                return false;
             }
         }
         else if (whatphase == 9)
@@ -349,6 +361,29 @@ public class CardManager : MonoBehaviour
         }
         return true;
     }
+    bool checkcolor(List<GameObject> cardcounts, int setlength)
+    {
+        bool foundfirst = false;
+        string firstnum = "";
+        int dictsize = cardcounts.Count;
+        for (int z = 0; z < setlength; z++)
+        {
+            string cardtype = cardcounts[z].GetComponent<card>().color;
+            if (!foundfirst)
+            {
+                firstnum = cardtype;
+                foundfirst = true;
+            }
+            else
+            {
+                if (cardtype != firstnum)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     (string, string) generaterandomcard()
     {
         string randomColor = colors[Random.Range(0, colors.Length)];
@@ -391,6 +426,10 @@ public class CardManager : MonoBehaviour
     }
     public void endturn()
     {
+        if (!hasdiscard)
+        {
+            return;
+        }
         editingphase = false;
         phasebuildercards.Clear();
         phasebuilderindices.Clear();
@@ -401,10 +440,6 @@ public class CardManager : MonoBehaviour
             loopcount = 2;
         }
         if (!hasdraw)
-        {
-            return;
-        }
-        if (!hasdiscard)
         {
             return;
         }
@@ -428,7 +463,7 @@ public class CardManager : MonoBehaviour
     /*GameObject getcard(int playerid, int index)
     {
         return playerhands[playerturn][index];
-    }*/
+    }*/     
     void drawcreatecard()
     {//Determines a random card, creates an object of it, and makes sure it has appeared
         if (!hasdraw)
@@ -477,10 +512,19 @@ public class CardManager : MonoBehaviour
             int newcardindex = i;
             GameObject tempcard = playerhands[playerturn][newcardindex];
             tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => removecard(playerturn, newcardindex));
+            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(playerturn, newcardindex));
             tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
         }
         hasdiscard = true;
+    }
+    public void debugphasebuilder()
+    {
+        string res = "";
+        foreach (int x in phasebuilderindices)
+        {
+            res += x.ToString();
+        }
+        Debug.Log("indices: " + res);
     }
     GameObject giveplayercard(int playerid, string color, string num)
     {
@@ -511,11 +555,13 @@ public class CardManager : MonoBehaviour
             int containsindex = phasebuilderindices.IndexOf(whichcard);
             if (containsindex != -1)//The hand index of that card is already in the list
             {
+                phasecard.GetComponent<SpriteRenderer>().color = Color.white;
                 phasebuilderindices.RemoveAt(containsindex);
                 phasebuildercards.RemoveAt(phasebuildercards.IndexOf(phasecard));
             }
             else//Doesn't exist
             {
+                phasecard.GetComponent<SpriteRenderer>().color = Color.cyan;
                 Debug.Log("Added a card");
                 //int currentphase = 1;
                 phasebuilderindices.Add(whichcard);

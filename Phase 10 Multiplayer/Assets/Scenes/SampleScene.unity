@@ -3187,7 +3187,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 386848314}
         m_TargetAssemblyTypeName: CardManager, Assembly-CSharp
-        m_MethodName: printcardstatus
+        m_MethodName: debugphasebuilder
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -1,4 +1,5 @@
 Reset discard pile
+If discard by playing on someone, endturn crashes trying to mess wtih discard pile
 When End Turn, Reset propsed phase
 What happens if end turn with a blank discard pile, impossible?
 When failed phase selection, reset the propsed phase list to blank

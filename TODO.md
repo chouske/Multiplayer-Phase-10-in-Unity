@@ -1,3 +1,4 @@
+Can't play phase if already discarded
 Reset discard pile
 If discard by playing on someone, endturn crashes trying to mess wtih discard pile
 When End Turn, Reset propsed phase

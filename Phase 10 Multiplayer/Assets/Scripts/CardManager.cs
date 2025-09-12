@@ -28,10 +28,15 @@ public class CardManager : MonoBehaviour
     public TMP_Text roundtext;
     public TMP_Text phasebuttontext;
     public TMP_Text eachphasetext;
-    float CARD_START_X = -10.15f;
+    //float CARD_START_X = -10.15f;
+    float CARD_START_X = -20.15f;
     float CARD_START_Y = -5.25f;
     float CARD_GAP_X = 1.5f;
     float CARD_GAP_Y = 3.0f;
+    float PHASE_START_X = 0.0f;
+    float PHASE_START_Y = 3.75f;
+    float PHASE_GAP_X = 1.5f;
+    float PHASE_GAP_Y = -3.0f;
     Vector3 DISCARD_POSITION = new Vector3(9.14f, 0.5f, 416.2204f);
     int max_players = 6;
     int actual_players = 4;
@@ -572,11 +577,25 @@ public class CardManager : MonoBehaviour
                     Debug.Log("How many in builder: " + phasebuildercards.Count);
                     Debug.Log("player turn: " + playerturn);
                     /*Debug.Log("requirements: " + phaserequirements[playerphases[playerturn]]);*/
+                    List<GameObject> phasebuilderCopy = new List<GameObject>(phasebuildercards);
                     if (checkphase(phasebuildercards, playerphases[playerturn]) == true)
                     {
                         int winner = playerturn;
+                        putdowncards(phasebuilderCopy, playerphases[playerturn]);
+                        /*for (int x = 0; x < phasebuilderCopy.Count; x++)
+                        {
+                            phasebuilderCopy[x].transform.position = new Vector3(PHASE_START_X, PHASE_START_Y + (PHASE_GAP_Y * x), phasecard.transform.position.z);
+                            phasebuilderCopy[x].GetComponent<SpriteRenderer>().color = Color.white;
+                        }*/
+                        /*
+                        9/10/25 OLD
                         endround();
                         updatephasedata(winner);
+                        */
+                    }
+                    foreach (GameObject tempcard in playerhands[playerturn])
+                    {
+                        tempcard.GetComponent<SpriteRenderer>().color = Color.white;
                     }
                     editingphase = false;
                     phasebuildercards.Clear();
@@ -589,6 +608,28 @@ public class CardManager : MonoBehaviour
         else
         {
             removecard(owner, whichcard);
+        }
+    }
+    void putdowncards(List<GameObject> cardcounts, int phaseno)
+    {
+        if (phaseno == 1)
+        {
+            for (int x = 0; x < 3; x++)
+            {
+                cardcounts[x].transform.position = new Vector3(PHASE_START_X, PHASE_START_Y + (PHASE_GAP_Y * x), cardcounts[x].transform.position.z);
+                cardcounts[x].GetComponent<SpriteRenderer>().color = Color.white;
+                //cardcounts.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
+                /*cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
+                {
+                    addphaseextension()
+                ;
+                });*/
+            }
+            for (int x = 3; x < 6; x++)
+            {
+                cardcounts[x].transform.position = new Vector3(PHASE_START_X + PHASE_GAP_X, PHASE_START_Y + (PHASE_GAP_Y * (x-3)), cardcounts[x].transform.position.z);
+                cardcounts[x].GetComponent<SpriteRenderer>().color = Color.white;
+            }
         }
     }
     void updatephasedata(int winner)

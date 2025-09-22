@@ -1,4 +1,6 @@
-Can't play phase if already discarded
+Successfully remove card from hand data when played on other cards
+Played down cards shouldn't shift on discard
+Check for skips when play phase
 Reset discard pile
 If discard by playing on someone, endturn crashes trying to mess wtih discard pile
 When End Turn, Reset propsed phase

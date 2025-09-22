@@ -37,20 +37,13 @@ public class CardManager : MonoBehaviour
     float PHASE_START_Y = 3.75f;
     float PHASE_GAP_X = 1.5f;
     float PHASE_GAP_Y = -3.0f;
-    float SET_GAP_X = 6.0f;
-        enum PhaseRule
-    {
-        Set,
-        Run,
-        Color
-    }
-    //Vector3 DISCARD_POSITION = new Vector3(9.14f, 0.5f, 416.2204f);
-    Vector3 DISCARD_POSITION = new Vector3(16.21f, -12.3f, 416.2204f);
+    Vector3 DISCARD_POSITION = new Vector3(9.14f, 0.5f, 416.2204f);
     int max_players = 6;
     int actual_players = 4;
     int max_cards = 11;
     int round = 0;
     int playerturn = 0;
+    bool hasdiscard = false;
     bool hasdraw = false;
     bool editingphase = false;
     List<GameObject> phasebuildercards;
@@ -60,11 +53,6 @@ public class CardManager : MonoBehaviour
     List<GameObject>[] playerhands;
     int[] playerphases;
     int[] phaserequirements = {6, 7, 8, 7, 8, 9, 8, 7, 7, 8};
-
-
-
-
-
     void Start()
     {
         playerphases = new int[actual_players];
@@ -425,6 +413,7 @@ public class CardManager : MonoBehaviour
     }*/
     public void endround()
     {
+        hasdiscard = false;
         hasdraw = false;
         playerturn = 0;
         round++;
@@ -442,6 +431,10 @@ public class CardManager : MonoBehaviour
     }
     public void endturn()
     {
+        if (!hasdiscard)
+        {
+            return;
+        }
         editingphase = false;
         phasebuildercards.Clear();
         phasebuilderindices.Clear();
@@ -450,6 +443,10 @@ public class CardManager : MonoBehaviour
         if (discardpile.GetComponent<card>().color == "skip")
         {
             loopcount = 2;
+        }
+        if (!hasdraw)
+        {
+            return;
         }
         for (int i = 0; i < loopcount; i++)
         {
@@ -463,10 +460,15 @@ public class CardManager : MonoBehaviour
             }
         }
         turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
+        hasdiscard = false;
         hasdraw = false;
         //hideallplayercards();
         //displayplayercards(playerturn);
-    }   
+    }
+    /*GameObject getcard(int playerid, int index)
+    {
+        return playerhands[playerturn][index];
+    }*/     
     void drawcreatecard()
     {//Determines a random card, creates an object of it, and makes sure it has appeared
         if (!hasdraw)
@@ -476,7 +478,7 @@ public class CardManager : MonoBehaviour
             hasdraw = true;
         }
     }
-    /*void oldremovecard(int owner, int whichcard)
+    void removecard(int owner, int whichcard)
     {
         if (owner != playerturn)
         {
@@ -519,7 +521,7 @@ public class CardManager : MonoBehaviour
             tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
         }
         hasdiscard = true;
-    }*/
+    }
     public void debugphasebuilder()
     {
         string res = "";
@@ -548,201 +550,86 @@ public class CardManager : MonoBehaviour
         {
             return;
         }
-        GameObject phasecard = playerhands[playerturn][whichcard];
-        if (phasecard.GetComponent<card>().color == "skip")
+        if (editingphase)
         {
-            return;
-        }
-        int containsindex = phasebuilderindices.IndexOf(whichcard);
-        if (containsindex != -1)//The hand index of that card is already in the list
-        {
-            phasecard.GetComponent<SpriteRenderer>().color = Color.white;
-            phasebuilderindices.RemoveAt(containsindex);
-            phasebuildercards.RemoveAt(phasebuildercards.IndexOf(phasecard));
-        }
-        else//Doesn't exist
-        {
-            phasecard.GetComponent<SpriteRenderer>().color = Color.cyan;
-            //int currentphase = 1;
-            phasebuilderindices.Add(whichcard);
-            phasebuildercards.Add(phasecard);
-            if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn]-1]))
+            GameObject phasecard = playerhands[playerturn][whichcard];
+            if (phasecard.GetComponent<card>().color == "skip")
             {
-                Debug.Log("Doing Check");
-                Debug.Log("How many in builder: " + phasebuildercards.Count);
-                Debug.Log("player turn: " + playerturn);
-                /*Debug.Log("requirements: " + phaserequirements[playerphases[playerturn]]);*/
-                List<GameObject> phasebuilderCopy = new List<GameObject>(phasebuildercards);
-                if (checkphase(phasebuilderCopy, playerphases[playerturn]) == true)
-                {
-                    int winner = playerturn;
-                    putdowncards(phasebuildercards, playerphases[playerturn]);
-                    /*for (int x = 0; x < phasebuilderCopy.Count; x++)
-                    {
-                        phasebuilderCopy[x].transform.position = new Vector3(PHASE_START_X, PHASE_START_Y + (PHASE_GAP_Y * x), phasecard.transform.position.z);
-                        phasebuilderCopy[x].GetComponent<SpriteRenderer>().color = Color.white;
-                    }*/
-                    /*
-                    9/10/25 OLD
-                    endround();
-                    updatephasedata(winner);
-                    */
-                }
-                foreach (GameObject tempcard in playerhands[playerturn])
-                {
-                    tempcard.GetComponent<SpriteRenderer>().color = Color.white;
-                }
-                editingphase = false;
-                phasebuildercards.Clear();
-                phasebuilderindices.Clear();
-                phasebuttontext.text = "Play Phase";
+                return;
             }
-            
-        }
-    }
-    /*void removecardfromhand(int atindex, int whichplayer) {
-        playerhands[whichplayer].RemoveAt(atindex);
-    }*/
-    void removecardfromhand(GameObject thecard, int whichplayer)
-    {
-        if (playerhands[whichplayer].Contains(thecard))
-        {
-            playerhands[whichplayer].Remove(thecard);
-            compacthand(whichplayer); // keep hand layout tidy
+            int containsindex = phasebuilderindices.IndexOf(whichcard);
+            if (containsindex != -1)//The hand index of that card is already in the list
+            {
+                phasecard.GetComponent<SpriteRenderer>().color = Color.white;
+                phasebuilderindices.RemoveAt(containsindex);
+                phasebuildercards.RemoveAt(phasebuildercards.IndexOf(phasecard));
+            }
+            else//Doesn't exist
+            {
+                phasecard.GetComponent<SpriteRenderer>().color = Color.cyan;
+                Debug.Log("Added a card");
+                //int currentphase = 1;
+                phasebuilderindices.Add(whichcard);
+                phasebuildercards.Add(phasecard);
+                if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn]-1]))
+                {
+                    Debug.Log("Doing Check");
+                    Debug.Log("How many in builder: " + phasebuildercards.Count);
+                    Debug.Log("player turn: " + playerturn);
+                    /*Debug.Log("requirements: " + phaserequirements[playerphases[playerturn]]);*/
+                    List<GameObject> phasebuilderCopy = new List<GameObject>(phasebuildercards);
+                    if (checkphase(phasebuildercards, playerphases[playerturn]) == true)
+                    {
+                        int winner = playerturn;
+                        putdowncards(phasebuilderCopy, playerphases[playerturn]);
+                        /*for (int x = 0; x < phasebuilderCopy.Count; x++)
+                        {
+                            phasebuilderCopy[x].transform.position = new Vector3(PHASE_START_X, PHASE_START_Y + (PHASE_GAP_Y * x), phasecard.transform.position.z);
+                            phasebuilderCopy[x].GetComponent<SpriteRenderer>().color = Color.white;
+                        }*/
+                        /*
+                        9/10/25 OLD
+                        endround();
+                        updatephasedata(winner);
+                        */
+                    }
+                    foreach (GameObject tempcard in playerhands[playerturn])
+                    {
+                        tempcard.GetComponent<SpriteRenderer>().color = Color.white;
+                    }
+                    editingphase = false;
+                    phasebuildercards.Clear();
+                    phasebuilderindices.Clear();
+                    phasebuttontext.text = "Play Phase";
+                }
+                
+            }
         }
         else
         {
-            Debug.LogWarning("Tried to remove a card that wasn't in the player's hand!");
+            removecard(owner, whichcard);
         }
-    }
-    void compacthand(int whichplayer)
-    {
-        for (int i = 0; i < playerhands[whichplayer].Count; i++)
-        {
-            int newcardindex = i;
-            GameObject tempcard = playerhands[whichplayer][newcardindex];
-            tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(whichplayer, newcardindex));
-            //tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
-            tempcard.transform.position = new Vector3(CARD_START_X + CARD_GAP_X * i, CARD_START_Y + CARD_GAP_Y * whichplayer, tempcard.transform.position.z);
-        }
-    }
-    public void discard()
-    {
-        if (!hasdraw)
-        {
-            return;
-        }
-        if (phasebuildercards.Count != 1)
-        {
-            return;
-        }
-        Destroy(discardpile);
-        GameObject cardtomove = phasebuildercards[0];
-        cardtomove.GetComponent<SpriteRenderer>().color = Color.white;
-        int whichcard = phasebuilderindices[0];
-        cardtomove.transform.position = DISCARD_POSITION;
-        discardpile = cardtomove;
-        card cardscript = cardtomove.GetComponent<card>();
-        cardtomove.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-        cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
-        {
-            if (!hasdraw)
-            {
-                Destroy(cardtomove);
-                giveplayercard(playerturn, cardscript.color, cardscript.type);
-                hasdraw = true;
-            }
-        ;
-        });
-        removecardfromhand(whichcard, playerturn);
-        compacthand(playerturn);
-        /*playerhands[playerturn].RemoveAt(whichcard);
-        for (int i = whichcard; i < playerhands[playerturn].Count; i++)
-        {
-            int newcardindex = i;
-            GameObject tempcard = playerhands[playerturn][newcardindex];
-            tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(playerturn, newcardindex));
-            tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
-        }*/
-        endturn();
     }
     void putdowncards(List<GameObject> cardcounts, int phaseno)
     {
-        Debug.Log("Put down cards");
         if (phaseno == 1)
         {
-            for (int z = 0; z < 3; z++)
+            for (int x = 0; x < 3; x++)
             {
-                int x = z;
-                GameObject thiscard = cardcounts[x];
-                thiscard.transform.position = new Vector3(PHASE_START_X + (SET_GAP_X * playerturn), PHASE_START_Y + (PHASE_GAP_Y * x), thiscard.transform.position.z);
-                thiscard.GetComponent<SpriteRenderer>().color = Color.white;
-                if (x == 2)
+                cardcounts[x].transform.position = new Vector3(PHASE_START_X, PHASE_START_Y + (PHASE_GAP_Y * x), cardcounts[x].transform.position.z);
+                cardcounts[x].GetComponent<SpriteRenderer>().color = Color.white;
+                //cardcounts.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
+                /*cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
                 {
-                    thiscard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-                    thiscard.GetComponentInChildren<Button>().onClick.AddListener(() =>
-                    {
-                        addphaseextension(thiscard, PhaseRule.Set)
-                    ;
-                    });
-                }
-                int handIndex = playerhands[playerturn].IndexOf(thiscard);
-                removecardfromhand(handIndex, playerturn);//Index 0 because the list shifts left
-            }
-            for (int z = 3; z < 6; z++)
-            {
-                int x = z;
-                GameObject thiscard = cardcounts[x];
-                thiscard.transform.position = new Vector3(PHASE_START_X + PHASE_GAP_X + (SET_GAP_X * playerturn), PHASE_START_Y + (PHASE_GAP_Y * (x - 3)), thiscard.transform.position.z);
-                thiscard.GetComponent<SpriteRenderer>().color = Color.white;
-                if (x == 5)
-                {
-                    thiscard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-                    thiscard.GetComponentInChildren<Button>().onClick.AddListener(() =>
-                    {
-                        addphaseextension(thiscard, PhaseRule.Set)
-                    ;
-                    });
-                }
-                int handIndex = playerhands[playerturn].IndexOf(thiscard);
-                removecardfromhand(handIndex, playerturn);
-
-            }
-            compacthand(playerturn);
-        }
-    }
-    void addphaseextension(GameObject thecard, PhaseRule therule)
-    {
-        Debug.Log("Phase extension");
-        if (phasebuildercards.Count != 1)
-        {
-            Debug.Log("Not 1");
-            return;
-        }
-        if (therule == PhaseRule.Set)
-        {
-            if (phasebuildercards[0].GetComponent<card>().type == thecard.GetComponent<card>().type)
-            {
-                //Debug.Log("Success!!");
-                //Clear old one's on click!
-                GameObject basecard = phasebuildercards[0];
-                thecard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-                phasebuildercards[0].GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-                phasebuildercards[0].GetComponentInChildren<Button>().onClick.AddListener(() =>
-                {
-                    addphaseextension(basecard, PhaseRule.Set)
+                    addphaseextension()
                 ;
-                });
+                });*/
             }
-            int handIndex = playerhands[playerturn].IndexOf(thecard);
-            removecardfromhand(handIndex, playerturn);
-            compacthand(playerturn);
-            phasebuildercards[0].transform.position = new Vector3(thecard.transform.position.x, thecard.transform.position.y + PHASE_GAP_Y, thecard.transform.position.z);
-            phasebuildercards[0].GetComponent<SpriteRenderer>().color = Color.white;
-            phasebuildercards.Clear();
-            phasebuilderindices.Clear();
+            for (int x = 3; x < 6; x++)
+            {
+                cardcounts[x].transform.position = new Vector3(PHASE_START_X + PHASE_GAP_X, PHASE_START_Y + (PHASE_GAP_Y * (x-3)), cardcounts[x].transform.position.z);
+                cardcounts[x].GetComponent<SpriteRenderer>().color = Color.white;
+            }
         }
     }
     void updatephasedata(int winner)

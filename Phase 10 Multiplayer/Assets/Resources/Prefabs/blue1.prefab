@@ -65,7 +65,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1
+  m_text: '1
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -304,7 +306,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: End turn
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -411,8 +413,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.39, y: -0.05}
-  m_SizeDelta: {x: 2.88, y: 5.53}
+  m_AnchoredPosition: {x: -0.47, y: -0.29}
+  m_SizeDelta: {x: 0.86, y: 2.2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5410686787477725413
 CanvasRenderer:
@@ -535,8 +537,8 @@ Transform:
   m_GameObject: {fileID: 8011693334971816798}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.05, y: 0.07, z: 0.05}
+  m_LocalPosition: {x: -10.71343, y: -11.05204, z: 0}
+  m_LocalScale: {x: 0.12385229, y: 0.14917956, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2010241569931189759}
@@ -586,7 +588,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -2625571652349370520, guid: 3c923241e4123e2478ce8812161c6a57, type: 3}
+  m_Sprite: {fileID: 6951173284438221346, guid: 97d8eb5e5959c4b478794ec3161fc0cb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

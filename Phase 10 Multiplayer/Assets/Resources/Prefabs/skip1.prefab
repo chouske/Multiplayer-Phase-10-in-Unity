@@ -609,6 +609,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9c5849b4878c3c4fbc2ef44fbbaebd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  type: 1
+  type: -1
   color: skip
   owner: 0

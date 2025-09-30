@@ -20,10 +20,12 @@ public class CardManager : MonoBehaviour
     public GameObject card11;
     public GameObject card12;*/
     #endregion
-    string[] colors = { "red", "blue", "green", "yellow", "skip"};
-    GameObject discardpile;
+    int STARTING_PHASE = 2;
+    public List<GameObject> aiPlayers = new List<GameObject>();
+    public string[] colors = { "red", "blue", "green", "yellow", "skip"};
+    public GameObject discardpile;
     //string[] colors = {"blue"};
-    int[] numbers = {1, 2};
+    public int[] numbers = {1, 2, 3, 4};
     public TMP_Text turntext;
     public TMP_Text roundtext;
     public TMP_Text phasebuttontext;
@@ -31,14 +33,15 @@ public class CardManager : MonoBehaviour
     //float CARD_START_X = -10.15f;
     float CARD_START_X = -20.15f;
     float CARD_START_Y = -5.25f;
-    float CARD_GAP_X = 1.5f;
-    float CARD_GAP_Y = 3.0f;
+    float CARD_GAP_X = 1.6f;
+    float CARD_GAP_Y = 3.2f;
     float PHASE_START_X = -2.0f;
     float PHASE_START_Y = 3.75f;
-    float PHASE_GAP_X = 1.5f;
-    float PHASE_GAP_Y = -1.5f;
-    float SET_GAP_X = 6.0f;
-    int STARTING_PHASE = 10;
+    float PHASE_GAP_X = 1.6f;
+    float PHASE_GAP_Y = -1.6f;
+    float SET_GAP_X = 6.4f;
+    public int errno = 1;
+
     enum PhaseRule
     {
         Set,
@@ -56,14 +59,18 @@ public class CardManager : MonoBehaviour
     bool editingphase = false;
     List<GameObject> phasebuildercards;
     Dictionary<string, Dictionary<string, GameObject>> allpossiblecards = new Dictionary<string, Dictionary<string, GameObject>>();
-    List<GameObject>[] playerhands;
-    int[] playerphases;
+    public List<GameObject>[] playerhands;
+    public int[] playerphases;
     int[] phaserequirements = {6, 7, 8, 7, 8, 9, 8, 7, 7, 8};
-    bool[] hasplayedphase;
-    List<GameObject> playedCards = new List<GameObject>();  
-
-
-
+    public bool[] hasplayedphase;
+    public List<GameObject> playedCards = new List<GameObject>();
+    public List<GameObject> toPlayOn = new List<GameObject>();
+    public bool isProcessingCardPlay = false;
+    public void dolog(string themsg)
+    {
+        Debug.Log(errno.ToString() + ": " + themsg);
+        errno++;
+    }
     void Start()
     {
         playerphases = new int[actual_players];
@@ -153,7 +160,7 @@ public class CardManager : MonoBehaviour
     {
         if (whatphase == 1)//2 sets of 3
         {
-            Debug.Log("Phase 1 check");
+            //Debug.Log("Phase 1 check");
             for (int z = 0; z < 2; z++)
             {
                 if (!checkset(cardcounts, 3))
@@ -168,7 +175,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 2)
         {
-            Debug.Log("Phase 2 check");
+            //Debug.Log("Phase 2 check");
             if (!checkset(cardcounts, 3))
             {
                 return false;
@@ -184,7 +191,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 3)
         {
-            Debug.Log("Phase 3 check");
+            //Debug.Log("Phase 3 check");
             if (!checkset(cardcounts, 4))
             {
                 return false;
@@ -200,7 +207,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 4)
         {
-            Debug.Log("Phase 4 check");
+            //Debug.Log("Phase 4 check");
             if (!checkrun(cardcounts, 7))
             {
                 return false;
@@ -208,7 +215,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 5)
         {
-            Debug.Log("Phase 5 check");
+            //Debug.Log("Phase 5 check");
             if (!checkrun(cardcounts, 8))
             {
                 return false;
@@ -216,7 +223,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 6)
         {
-            Debug.Log("Phase 6 check");
+            //Debug.Log("Phase 6 check");
             if (!checkrun(cardcounts, 9))
             {
                 return false;
@@ -224,7 +231,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 7)
         {
-            Debug.Log("Phase 7 check");
+           // Debug.Log("Phase 7 check");
             for (int z = 0; z < 2; z++)
             {
                 if (!checkset(cardcounts, 4))
@@ -239,7 +246,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 8)
         {
-            Debug.Log("Phase 8 check");
+            //Debug.Log("Phase 8 check");
             if (!checkcolor(cardcounts, 7))
             {
                 return false;
@@ -247,7 +254,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 9)
         {
-            Debug.Log("Phase 9 check");
+            //Debug.Log("Phase 9 check");
             if (!checkset(cardcounts, 5))
             {
                 return false;
@@ -263,7 +270,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 10)
         {
-            Debug.Log("Phase 10 check");
+            //Debug.Log("Phase 10 check");
             if (!checkset(cardcounts, 5))
             {
                 return false;
@@ -355,7 +362,7 @@ public class CardManager : MonoBehaviour
         for (int z = 0; z < runlength; z++)
         {
             string cardtype = cardcounts[z].GetComponent<card>().type;
-            Debug.Log("card type: " + cardtype);
+            //Debug.Log("card type: " + cardtype);
             if (!foundfirst)
             {
                 firstnum = cardtype;
@@ -466,11 +473,14 @@ public class CardManager : MonoBehaviour
         }
         turntext.text = "Player " + (playerturn + 1).ToString() + "'s turn";
         hasdraw = false;
-        
+        if (playerturn != 0)
+        {
+             aiPlayers[playerturn - 1].GetComponent<AIController>().MakeDecision();
+        }
         //hideallplayercards();
         //displayplayercards(playerturn);
     }   
-    void drawcreatecard()
+    public void drawcreatecard()
     {//Determines a random card, creates an object of it, and makes sure it has appeared
         if (!hasdraw)
         {
@@ -534,6 +544,7 @@ public class CardManager : MonoBehaviour
     }*/
     GameObject giveplayercard(int playerid, string color, string num)
     {
+    
         GameObject newboardcard = Instantiate(allpossiblecards[color][num]);
         newboardcard.GetComponent<card>().owner = playerid;
         int beforecardcount = playerhands[playerid].Count;
@@ -565,9 +576,9 @@ public class CardManager : MonoBehaviour
             phasebuildercards.Add(phasecard);
             if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn]-1]))
             {
-                Debug.Log("Doing Check");
-                Debug.Log("How many in builder: " + phasebuildercards.Count);
-                Debug.Log("player turn: " + playerturn);
+                dolog("Doing Check");
+                dolog("How many in builder: " + phasebuildercards.Count);
+                dolog("player turn: " + playerturn);
                 /*Debug.Log("requirements: " + phaserequirements[playerphases[playerturn]]);*/
                 List<GameObject> phasebuilderCopy = new List<GameObject>(phasebuildercards);
                 if (checkphase(phasebuilderCopy, playerphases[playerturn]) == true)
@@ -670,9 +681,10 @@ public class CardManager : MonoBehaviour
             thiscard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
             if (x == end)
             {
+                toPlayOn.Add(thiscard);
                 thiscard.GetComponentInChildren<Button>().onClick.AddListener(() =>
                 {
-                    addphaseextension(thiscard, therule)
+                    addphaseextension(thiscard, therule);
                 ;
                 });
             }
@@ -682,7 +694,7 @@ public class CardManager : MonoBehaviour
     }
     void putdowncards(List<GameObject> cardcounts, int phaseno)
     {
-        Debug.Log("Put down cards");
+        dolog("Put down cards");
         if (phaseno == 1)
         {
              placecards(cardcounts, 0, 2, PhaseRule.Set);
@@ -735,20 +747,20 @@ public class CardManager : MonoBehaviour
     }
     void addphaseextension(GameObject thecard, PhaseRule therule)
     {
-        Debug.Log("Phase extension");
+        dolog("Phase extension");
         if ((phasebuildercards.Count != 1) || (hasplayedphase[playerturn] == false))
         {
-            Debug.Log("Not 1 or hasn't played phase yet");
+            dolog("Not 1 or hasn't played phase yet");
             return;
         }
         GameObject basecard = phasebuildercards[0];
         int handValue = int.Parse(phasebuildercards[0].GetComponent<card>().type);
-        int boardValue  = int.Parse(thecard.GetComponent<card>().type);
+        int boardValue = int.Parse(thecard.GetComponent<card>().type);
         string handColor = phasebuildercards[0].GetComponent<card>().color;
         string boardColor = thecard.GetComponent<card>().color;
         if (therule == PhaseRule.Set)
         {
-            if (handValue != handValue)
+            if (handValue != boardValue)
             {
                 return;
             }
@@ -767,6 +779,8 @@ public class CardManager : MonoBehaviour
                 return;
             }
         }
+        toPlayOn.Add(basecard);
+        toPlayOn.Remove(thecard);
         thecard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
         phasebuildercards[0].GetComponentInChildren<Button>().onClick.RemoveAllListeners();
         phasebuildercards[0].GetComponentInChildren<Button>().onClick.AddListener(() =>
@@ -785,6 +799,10 @@ public class CardManager : MonoBehaviour
         phasebuildercards[0].transform.position = new Vector3(thecard.transform.position.x, thecard.transform.position.y + PHASE_GAP_Y, thecard.transform.position.z);
         phasebuildercards[0].GetComponent<SpriteRenderer>().color = Color.white;
         phasebuildercards.Clear();
+        
+        isProcessingCardPlay = false;
+
+
     }
     void updatephasedata()
     {

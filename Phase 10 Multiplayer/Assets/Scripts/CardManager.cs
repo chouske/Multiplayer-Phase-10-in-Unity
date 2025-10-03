@@ -5,51 +5,38 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 public class CardManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    #region Card Prefabs
-    /*public GameObject card1;
-    public GameObject card2;
-    public GameObject card3;
-    public GameObject card4;
-    public GameObject card5;
-    public GameObject card6;
-    public GameObject card7;
-    public GameObject card8;
-    public GameObject card9;
-    public GameObject card10;
-    public GameObject card11;
-    public GameObject card12;*/
-    #endregion
-    int STARTING_PHASE = 2;
+    int STARTING_PHASE = 1;
+    public bool isDrawingCard = false;
     public List<GameObject> aiPlayers = new List<GameObject>();
-    public string[] colors = { "red", "blue", "green", "yellow", "skip"};
+    [System.NonSerialized] public string[] colors = { "red", "blue", "green", "yellow", "skip" };
     public GameObject discardpile;
     //string[] colors = {"blue"};
-    public int[] numbers = {1, 2, 3, 4};
+    [System.NonSerialized] public int[] numbers = { 1, 2, 3, 4 };
     public TMP_Text turntext;
     public TMP_Text roundtext;
     public TMP_Text phasebuttontext;
     public TMP_Text eachphasetext;
+    public TMP_Text aispeedtext;
     //float CARD_START_X = -10.15f;
     float CARD_START_X = -20.15f;
     float CARD_START_Y = -5.25f;
     float CARD_GAP_X = 1.6f;
     float CARD_GAP_Y = 3.2f;
     float PHASE_START_X = -2.0f;
-    float PHASE_START_Y = 3.75f;
+    float PHASE_START_Y = 2.5f;
     float PHASE_GAP_X = 1.6f;
     float PHASE_GAP_Y = -1.6f;
     float SET_GAP_X = 6.4f;
     public int errno = 1;
-
-    enum PhaseRule
+    bool cardsareshown = false;
+    public enum PhaseRule
     {
         Set,
         Run,
         Color
     }
     //Vector3 DISCARD_POSITION = new Vector3(9.14f, 0.5f, 416.2204f);
-    Vector3 DISCARD_POSITION = new Vector3(-15.8f, -10.44f, 416.2204f);
+    Vector3 DISCARD_POSITION = new Vector3(-15.19f, -9.41f, 416.2204f);
     int max_players = 6;
     int actual_players = 4;
     int max_cards = 11;
@@ -61,15 +48,36 @@ public class CardManager : MonoBehaviour
     Dictionary<string, Dictionary<string, GameObject>> allpossiblecards = new Dictionary<string, Dictionary<string, GameObject>>();
     public List<GameObject>[] playerhands;
     public int[] playerphases;
-    int[] phaserequirements = {6, 7, 8, 7, 8, 9, 8, 7, 7, 8};
+    int[] phaserequirements = { 6, 7, 8, 7, 8, 9, 8, 7, 7, 8 };
     public bool[] hasplayedphase;
     public List<GameObject> playedCards = new List<GameObject>();
-    public List<GameObject> toPlayOn = new List<GameObject>();
+    //public List<GameObject> toPlayOn = new List<GameObject>();
+    public List<(GameObject card, PhaseRule rule)> toPlayOn = new List<(GameObject, PhaseRule)>();
     public bool isProcessingCardPlay = false;
     public void dolog(string themsg)
     {
         Debug.Log(errno.ToString() + ": " + themsg);
         errno++;
+    }
+    public void increaseaispeed()
+    {
+        float newspeed = 2;
+        foreach (GameObject aiObj in aiPlayers)
+        {
+            AIController ai = aiObj.GetComponent<AIController>();
+            newspeed = ai.increasespeed();
+        }
+        aispeedtext.text = "AI Wait: " + newspeed.ToString() + "s";
+    }
+    public void decreaseaispeed()
+    {
+        float newspeed = 2;
+        foreach (GameObject aiObj in aiPlayers)
+        {
+            AIController ai = aiObj.GetComponent<AIController>();
+            newspeed = ai.decreasespeed();
+        }
+        aispeedtext.text = "AI Wait: " + newspeed.ToString() + "s";
     }
     void Start()
     {
@@ -231,7 +239,7 @@ public class CardManager : MonoBehaviour
         }
         else if (whatphase == 7)
         {
-           // Debug.Log("Phase 7 check");
+            // Debug.Log("Phase 7 check");
             for (int z = 0; z < 2; z++)
             {
                 if (!checkset(cardcounts, 4))
@@ -369,12 +377,12 @@ public class CardManager : MonoBehaviour
                 foundfirst = true;
             }
             else
-            {   
+            {
                 if (cardtype != (int.Parse(firstnum) + 1).ToString())
                 {
                     return false;
                 }
-                firstnum = (int.Parse(firstnum)+1).ToString();
+                firstnum = (int.Parse(firstnum) + 1).ToString();
             }
         }
         return true;
@@ -446,9 +454,14 @@ public class CardManager : MonoBehaviour
         }
         playedCards.Clear();
         phasebuildercards.Clear();
+        toPlayOn.Clear();
         Destroy(discardpile);
         giveplayersstartingcards();
         updatephasedata();
+        foreach (GameObject whichAI in aiPlayers)
+        {
+            whichAI.GetComponent<AIController>().resetai();
+        }
     }
     public void endturn()
     {
@@ -475,11 +488,11 @@ public class CardManager : MonoBehaviour
         hasdraw = false;
         if (playerturn != 0)
         {
-             aiPlayers[playerturn - 1].GetComponent<AIController>().MakeDecision();
+            aiPlayers[playerturn - 1].GetComponent<AIController>().MakeDecision();
         }
         //hideallplayercards();
         //displayplayercards(playerturn);
-    }   
+    }
     public void drawcreatecard()
     {//Determines a random card, creates an object of it, and makes sure it has appeared
         if (!hasdraw)
@@ -487,73 +500,24 @@ public class CardManager : MonoBehaviour
             var randomcard = generaterandomcard();
             giveplayercard(playerturn, randomcard.Item1, randomcard.Item2);
             hasdraw = true;
+            isDrawingCard = false;
         }
     }
-    /*void oldremovecard(int owner, int whichcard)
+
+    void giveplayercard(int playerid, string color, string num)
     {
-        if (owner != playerturn)
-        {
-            Debug.Log("Failed to remove card");
-            return;
-        }
-        Debug.Log("owner: " + owner + " which: " + whichcard);
-        if (!hasdraw)
-        {
-            return;
-        }
-        if (hasdiscard)
-        {
-            return;
-        }
-        //Debug.Log(whichcard);
-        Destroy(discardpile);
-        GameObject cardtomove = playerhands[playerturn][whichcard];
-        cardtomove.transform.position = DISCARD_POSITION;
-        discardpile = cardtomove;
-        card cardscript = cardtomove.GetComponent<card>();
-        cardtomove.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-        cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
-        {
-            if (!hasdraw)
-            {
-                Destroy(cardtomove);
-                giveplayercard(playerturn, cardscript.color, cardscript.type);
-                hasdraw = true;
-            }
-        ;
-        });
-        playerhands[playerturn].RemoveAt(whichcard);
-        for (int i = whichcard; i < playerhands[playerturn].Count; i++)
-        {
-            int newcardindex = i;
-            GameObject tempcard = playerhands[playerturn][newcardindex];
-            tempcard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
-            tempcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(playerturn, newcardindex));
-            tempcard.transform.position = new Vector3(tempcard.transform.position.x - CARD_GAP_X, tempcard.transform.position.y, tempcard.transform.position.z);//= new Vector3(-8.15f + (1.5f * (playerhands[playerturn].Count - 1)), -5.25f, 0f);
-        }
-        hasdiscard = true;
-    }*/
-    /*public void debugphasebuilder()
-    {
-        string res = "";
-        foreach (int x in phasebuilderindices)
-        {
-            res += x.ToString();
-        }
-        Debug.Log("indices: " + res);
-    }*/
-    GameObject giveplayercard(int playerid, string color, string num)
-    {
-    
+
         GameObject newboardcard = Instantiate(allpossiblecards[color][num]);
+        if (playerid != 0)
+        {
+            newboardcard.SetActive(cardsareshown);
+        }
         newboardcard.GetComponent<card>().owner = playerid;
         int beforecardcount = playerhands[playerid].Count;
         Vector3 cardpos = new Vector3(CARD_START_X + CARD_GAP_X * beforecardcount, CARD_START_Y + CARD_GAP_Y * playerid, 0f);
         newboardcard.transform.position = cardpos;
         playerhands[playerid].Add(newboardcard);
         newboardcard.GetComponentInChildren<Button>().onClick.AddListener(() => interactwithcard(playerid, newboardcard));
-
-        return null;
     }
     void interactwithcard(int owner, GameObject whichcard)
     {
@@ -574,7 +538,7 @@ public class CardManager : MonoBehaviour
             phasecard.GetComponent<SpriteRenderer>().color = Color.cyan;
             //int currentphase = 1;
             phasebuildercards.Add(phasecard);
-            if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn]-1]))
+            if (phasebuildercards.Count == (phaserequirements[playerphases[playerturn] - 1]))
             {
                 dolog("Doing Check");
                 dolog("How many in builder: " + phasebuildercards.Count);
@@ -588,7 +552,7 @@ public class CardManager : MonoBehaviour
                     playerphases[playerturn] += 1;//Winner is playerturn
                     if (playerphases[playerturn] == 11)
                     {
-                        GameData.winnerName = "Player " + (playerturn+1) + " Wins!";
+                        GameData.winnerName = "Player " + (playerturn + 1) + " Wins!";
                         UnityEngine.SceneManagement.SceneManager.LoadScene("WinScene");
                     }
                 }
@@ -600,7 +564,7 @@ public class CardManager : MonoBehaviour
                 phasebuildercards.Clear();
                 phasebuttontext.text = "Play Phase";
             }
-            
+
         }
     }
     void removecardfromhand(GameObject thecard, int whichplayer)
@@ -643,6 +607,7 @@ public class CardManager : MonoBehaviour
         cardtomove.GetComponent<SpriteRenderer>().color = Color.white;
         cardtomove.transform.position = DISCARD_POSITION;
         discardpile = cardtomove;
+        discardpile.SetActive(true);
         card cardscript = cardtomove.GetComponent<card>();
         cardtomove.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
         cardtomove.GetComponentInChildren<Button>().onClick.AddListener(() =>
@@ -676,16 +641,17 @@ public class CardManager : MonoBehaviour
         {
             int x = z;
             GameObject thiscard = cardcounts[x];
-            thiscard.transform.position = new Vector3(startx + (SET_GAP_X * playerturn), PHASE_START_Y + (PHASE_GAP_Y * (x - start)), whatz - (x*0.01f));
+            thiscard.SetActive(true);
+            thiscard.transform.position = new Vector3(startx + (SET_GAP_X * playerturn), PHASE_START_Y + (PHASE_GAP_Y * (x - start)), whatz - (x * 0.01f));
             thiscard.GetComponent<SpriteRenderer>().color = Color.white;
             thiscard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
             if (x == end)
             {
-                toPlayOn.Add(thiscard);
+                toPlayOn.Add((thiscard, therule));
                 thiscard.GetComponentInChildren<Button>().onClick.AddListener(() =>
                 {
                     addphaseextension(thiscard, therule);
-                ;
+                    ;
                 });
             }
             playedCards.Add(thiscard);
@@ -697,9 +663,9 @@ public class CardManager : MonoBehaviour
         dolog("Put down cards");
         if (phaseno == 1)
         {
-             placecards(cardcounts, 0, 2, PhaseRule.Set);
-             placecards(cardcounts, 3, 5, PhaseRule.Set);
-                        
+            placecards(cardcounts, 0, 2, PhaseRule.Set);
+            placecards(cardcounts, 3, 5, PhaseRule.Set);
+
         }
         if (phaseno == 2)
         {
@@ -725,25 +691,25 @@ public class CardManager : MonoBehaviour
         }
         if (phaseno == 7)
         {
-             placecards(cardcounts, 0, 3, PhaseRule.Set);
-             placecards(cardcounts, 4, 7, PhaseRule.Set);         
+            placecards(cardcounts, 0, 3, PhaseRule.Set);
+            placecards(cardcounts, 4, 7, PhaseRule.Set);
         }
         if (phaseno == 8)
         {
-             placecards(cardcounts, 0, 6, PhaseRule.Color); 
+            placecards(cardcounts, 0, 6, PhaseRule.Color);
         }
         if (phaseno == 9)
         {
-             placecards(cardcounts, 0, 4, PhaseRule.Set);
-             placecards(cardcounts, 5, 6, PhaseRule.Set);
+            placecards(cardcounts, 0, 4, PhaseRule.Set);
+            placecards(cardcounts, 5, 6, PhaseRule.Set);
         }
         if (phaseno == 10)
         {
-             placecards(cardcounts, 0, 4, PhaseRule.Set);
-             placecards(cardcounts, 5, 7, PhaseRule.Set);
+            placecards(cardcounts, 0, 4, PhaseRule.Set);
+            placecards(cardcounts, 5, 7, PhaseRule.Set);
         }
         compacthand(playerturn);
-        
+
     }
     void addphaseextension(GameObject thecard, PhaseRule therule)
     {
@@ -779,14 +745,13 @@ public class CardManager : MonoBehaviour
                 return;
             }
         }
-        toPlayOn.Add(basecard);
-        toPlayOn.Remove(thecard);
+        toPlayOn.Add((basecard, therule));
+        toPlayOn.Remove((thecard, therule));
         thecard.GetComponentInChildren<Button>().onClick.RemoveAllListeners();
         phasebuildercards[0].GetComponentInChildren<Button>().onClick.RemoveAllListeners();
         phasebuildercards[0].GetComponentInChildren<Button>().onClick.AddListener(() =>
         {
-            addphaseextension(basecard, therule)
-        ;
+            addphaseextension(basecard, therule);
         });
         playedCards.Add(basecard);
         removecardfromhand(basecard, playerturn);
@@ -799,7 +764,7 @@ public class CardManager : MonoBehaviour
         phasebuildercards[0].transform.position = new Vector3(thecard.transform.position.x, thecard.transform.position.y + PHASE_GAP_Y, thecard.transform.position.z);
         phasebuildercards[0].GetComponent<SpriteRenderer>().color = Color.white;
         phasebuildercards.Clear();
-        
+
         isProcessingCardPlay = false;
 
 
@@ -808,9 +773,28 @@ public class CardManager : MonoBehaviour
     {
         //playerphases[winner] += 1;
         eachphasetext.text = "";
-        for(int x = 0; x < playerphases.Length; x++)
+        for (int x = 0; x < playerphases.Length; x++)
         {
-            eachphasetext.text += "Player " + (x+1).ToString() + ": Phase " + playerphases[x].ToString() + "\n";
+            eachphasetext.text += "Player " + (x + 1).ToString() + ": Phase " + playerphases[x].ToString() + "\n";
         }
+    }
+    void toggleaicards(bool thestate)
+    {
+        for (int i = 1; i < playerhands.Length; i++)
+        {
+            foreach (GameObject thecard in playerhands[i])
+            {
+                card cardScript = thecard.GetComponent<card>();
+                if (cardScript.owner != 0)
+                {
+                    thecard.SetActive(thestate);
+                }
+            }
+        }
+    }
+    public void visibilitybutton()
+    {
+        cardsareshown = !cardsareshown;
+        toggleaicards(cardsareshown);
     }
 }
